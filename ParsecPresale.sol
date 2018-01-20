@@ -150,7 +150,7 @@ contract ParsecPresale is owned {
         require(totalFunding >= PRESALE_MINIMUM_FUNDING);
 
         // Withdraw the total funding amount
-        assert(owner.send(totalFunding));
+        owner.transfer(totalFunding);
     }
 
     /// @notice The owner can withdraw unspent Parsec credits if the minimum funding level has been
@@ -225,7 +225,7 @@ contract ParsecPresale is owned {
         balanceOf[msg.sender] = safeDecrement(balanceOf[msg.sender], value);
 
         // Send ethers back to the participant's account
-        assert(msg.sender.send(value));
+        msg.sender.transfer(value);
     }
 
     /// @notice The owner can clawback any ethers after a date in the future, so no
@@ -239,7 +239,7 @@ contract ParsecPresale is owned {
         require(now >= OWNER_CLAWBACK_DATE);
 
         // Send remaining funds back to the owner
-        assert(owner.send(this.balance));
+        owner.transfer(this.balance);
     }
 
     /// @notice The owner can clawback any unspent Parsec credits after a date in the future,
