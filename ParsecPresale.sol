@@ -40,10 +40,10 @@ contract ParsecPresale is owned {
 
     // Minimal amount of Parsec credits to be avaibale on this contract balance
     // in order to grant credits for all possible participant contributions
-    uint256 public constant PARSEC_CREDITS_MINIMAL_AMOUNT = 3549000000;
+    uint256 public constant PARSEC_CREDITS_MINIMAL_AMOUNT = 3549000000000000;   // 3549000000.000000 PRSC
 
     // Amount of Parsec credits to be granted per ether
-    uint256 public constant PARSEC_CREDITS_PER_ETHER = 1690000;
+    uint256 public constant PARSEC_CREDITS_PER_ETHER = 1690000000000;           // 1690000.000000 PRSC
 
     // It amount of transfer is greater or equal to this threshold,
     // additional bonus Parsec credits will be granted
@@ -290,7 +290,8 @@ contract ParsecPresale is owned {
         uint256 creditsToGrant = (multiplier * etherAmount * PARSEC_CREDITS_PER_ETHER) / (divisor * 1 ether);
 
         // Check if contract has enough Parsec credits
-        require((parsecToken.balanceOf(this) - grantedParsecCredits) >= creditsToGrant);
+        var currentBalanceInCredits = parsecToken.balanceOf(this);
+        require(currentBalanceInCredits - grantedParsecCredits >= creditsToGrant);
 
         // Add Parsec credits amount to participant's credit balance
         creditBalanceOf[participant] = safeIncrement(creditBalanceOf[participant], creditsToGrant);
