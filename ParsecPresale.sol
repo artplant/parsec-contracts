@@ -70,6 +70,9 @@ contract ParsecPresale is owned {
     // Keep track if unclaimed Parsec credits were clawbacked
     bool public creditsClawbacked = false;
 
+    // Keep track if contract balance has enough Parsec tokens
+    bool public contractPoweredUp = false;
+
     /// @notice Keep track of all participants contributions, including both the
     ///         preallocation and public phases
     /// @dev Name complies with ERC20 token standard, etherscan for example will recognize
@@ -106,14 +109,14 @@ contract ParsecPresale is owned {
     /// @notice A participant's contribution will be rejected if the presale
     ///         has been funded to the maximum amount
     function () public payable {
+        // Contract should be powered up
+        require(contractPoweredUp);
+
         // A participant cannot send funds before the presale start date
         require(now >= PRESALE_START_DATE);
 
         // A participant cannot send funds after the presale end date
         require(now < PRESALE_END_DATE);
-
-        // Contract should have enough Parsec credits
-        require(parsecToken.balanceOf(this) >= PARSEC_CREDITS_MINIMAL_AMOUNT);
 
         // A participant cannot send less than the minimum amount
         require(msg.value >= MINIMUM_PARTICIPATION_AMOUNT);
@@ -140,6 +143,19 @@ contract ParsecPresale is owned {
         grantCreditsForParticipation(msg.sender, msg.value);
     }
 
+    /// @notice Check if pre-sale contract has enough Parsec credits on its account balance 
+    ///         to reward all possible participations within pre-sale period and max cap
+    function powerUpContract() external onlyOwner {
+        // Contract should not be powered up previously
+        require(!contractPoweredUp);
+
+        // Contract should have enough Parsec credits
+        require(parsecToken.balanceOf(this) >= PARSEC_CREDITS_MINIMAL_AMOUNT);
+
+        // Raise contract power-up flag
+        contractPoweredUp = true;
+    }
+
     /// @notice The owner can withdraw ethers only if the minimum funding level has been reached
     //          and pre-sale is over
     function ownerWithdraw() external onlyOwner {
@@ -163,7 +179,7 @@ contract ParsecPresale is owned {
         require(totalFunding >= PRESALE_MINIMUM_FUNDING);
 
         // The owner cannot withdraw unspent Parsec credits more than once
-        require(unspentCreditsWithdrawn == false);
+        require(!unspentCreditsWithdrawn);
 
         // Transfer unspent Parsec credits back to pre-sale contract owner
         uint256 unspentAmount = safeDecrement(parsecToken.balanceOf(this), grantedParsecCredits);
@@ -179,7 +195,7 @@ contract ParsecPresale is owned {
         require(totalFunding >= PRESALE_MINIMUM_FUNDING);
 
         // The owner cannot withdraw unclaimed Parsec credits more than once
-        require(unclaimedCreditsWithdrawn == false);
+        require(!unclaimedCreditsWithdrawn);
 
         // Transfer unclaimed Parsec credits back to pre-sale contract owner
         parsecToken.transfer(owner, parsecToken.balanceOf(this));
@@ -253,7 +269,7 @@ contract ParsecPresale is owned {
         require(now >= OWNER_CLAWBACK_DATE);
 
         // The owner cannot clawback unclaimed Parsec credits more than once
-        require(creditsClawbacked == false);
+        require(!creditsClawbacked);
 
         // Transfer clawbacked Parsec credits back to pre-sale contract owner
         parsecToken.transfer(owner, parsecToken.balanceOf(this));
