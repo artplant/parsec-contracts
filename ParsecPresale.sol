@@ -14,9 +14,6 @@ contract ParsecPresale is owned {
     // Minimum amount per transaction for public participants
     uint256 public constant MINIMUM_PARTICIPATION_AMOUNT = 0.5 ether;
 
-    // Total whitelisted funding amount
-    uint256 public constant TOTAL_WHITELISTED_FUNDING = 1814.37 ether;  // Total whitelisted funding
-
     // Public presale period
     uint256 public constant PRESALE_START_DATE = 1516795200;            // 2018-01-24 12:00:00 UTC
     uint256 public constant PRESALE_END_DATE = 1517400000;              // 2018-01-31 12:00:00 UTC
@@ -69,6 +66,27 @@ contract ParsecPresale is owned {
     // Keep track if contract balance has enough Parsec tokens
     bool public contractPoweredUp = false;
 
+    // Keep track if chunk 1 us already added to white list
+    bool public chunk1IsAdded = false;
+
+    // Keep track if chunk 2 us already added to white list
+    bool public chunk2IsAdded = false;
+
+    // Keep track if chunk 3 us already added to white list
+    bool public chunk3IsAdded = false;
+
+    // Keep track if chunk 4 us already added to white list
+    bool public chunk4IsAdded = false;
+
+    // Keep track if chunk 5 us already added to white list
+    bool public chunk5IsAdded = false;
+
+    // Keep track if chunk 6 us already added to white list
+    bool public chunk6IsAdded = false;
+
+    // Keep track if chunk 7 us already added to white list
+    bool public chunk7IsAdded = false;
+
     /// @notice Keep track of all participants contributions, including both the
     ///         preallocation and public phases
     /// @dev Name complies with ERC20 token standard, etherscan for example will recognize
@@ -92,8 +110,56 @@ contract ParsecPresale is owned {
     function ParsecPresale (address tokenAddress) public {
         // Get Parsec ERC20 token instance
         parsecToken = ParsecTokenERC20(tokenAddress);
+    }
 
-        // Add registered pledgers to whitelist
+    /// @notice A participant sends a contribution to the contract's address
+    ///         between the PRESALE_START_DATE and the PRESALE_END_DATE
+    /// @notice Only contributions above the MINIMUM_PARTICIPATION_AMOUNT are accepted.
+    ///         Otherwise the transaction is rejected and contributed amount is returned
+    ///         to the participant's account
+    /// @notice A participant's contribution will be rejected if the presale
+    ///         has been funded to the maximum amount
+    function () public payable {
+        // Contract should be powered up
+        require(contractPoweredUp);
+
+        // A participant cannot send funds before the presale start date
+        require(now >= PRESALE_START_DATE);
+
+        // A participant cannot send funds after the presale end date
+        require(now < PRESALE_END_DATE);
+
+        // A participant cannot send less than the minimum amount
+        require(msg.value >= MINIMUM_PARTICIPATION_AMOUNT);
+
+        // Contract logic for transfers relies on current date and time.
+        if (now >= PRESALE_START_DATE && now < PRESALE_SECOND_DAY_START) {
+            // Trasfer logic for the 1st day of pre-sale.
+            // Allow to transfer exact whitelisted sum for whitelisted addresses.
+            require(whitelist[msg.sender] == msg.value);
+            require(balanceOf[msg.sender] == 0);
+        } else if (now >= PRESALE_SECOND_DAY_START && now < PRESALE_THIRD_DAY_START) {
+            // Trasfer logic for the 2nd day of pre-sale.
+            // Allow to transfer any sum within contract max cap for whitelisted addresses.
+            require(whitelist[msg.sender] != 0);
+        }
+
+        // A participant cannot send funds if the presale has been reached the maximum funding amount
+        require(totalFunding.add(msg.value) <= PRESALE_MAXIMUM_FUNDING);
+
+        // Register the participant's contribution
+        addBalance(msg.sender, msg.value);
+
+        // Grant Parsec credits according to participant's contribution
+        grantCreditsForParticipation(msg.sender, msg.value);
+    }
+
+    /// @notice Add chunk 1 / 7 to the whitelist
+    function addChunk1ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk1IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0x2C66aDd04950eE3235fd3EC6BcB2577c88d804E4, 0.5 ether);
         addToWhitelist(0x008e2E5FC70a2bccB5857AE8591119B3B63fdbc2, 0.5 ether);
         addToWhitelist(0x0330cc41bDd33f820d92C2df591CD2A5cB99f792, 0.5 ether);
@@ -146,6 +212,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0x6806408fd066ccddceaecc0a6c6fbbdb2ae8259c, 0.5 ether);
         addToWhitelist(0x6918a5b07c2f79a4b272bb7653a43438ca96cd3f, 0.5 ether);
         addToWhitelist(0x697DE67DB7d462480418814831d52DA25917A12E, 0.5 ether);
+
+        // Set chunk added flag
+        chunk1IsAdded = true;
+    }
+
+    /// @notice Add chunk 2 / 7 to the whitelist
+    function addChunk2ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk2IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0x6A35d29D8F63E4D8A8E5418Be9342A48c4C8eF07, 0.5 ether);
         addToWhitelist(0x6b2a80FB3C8Eca5144E6F129a447b9D06224a402, 0.5 ether);
         addToWhitelist(0x6b8ebca41389689e8875af541a2fa4328ac49917, 0.5 ether);
@@ -198,6 +275,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0xd454ED303748Bb5a433388F9508433ba5d507030, 0.5 ether);
         addToWhitelist(0xd4d1197fed5F9f3679497Df3604147087B85Ce39, 0.5 ether);
         addToWhitelist(0xd83F072142C802A6fA3921d6512B25a7c1A216b1, 0.5 ether);
+
+        // Set chunk added flag
+        chunk2IsAdded = true;
+    }
+
+    /// @notice Add chunk 3 / 7 to the whitelist
+    function addChunk3ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk3IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0xd9b4cb7bf6a04f545c4c0e32d4570f16cbb3be56, 0.5 ether);
         addToWhitelist(0xDCfe2F26c4c47741851e0201a91FB3b8b6452C81, 0.5 ether);
         addToWhitelist(0xDf1734032A21Fc9F59E6aCE263b65E4c2bE29861, 0.5 ether);
@@ -250,6 +338,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0x400d654A92494958E630A928f9c2Cfc9a0A8e011, 1 ether);
         addToWhitelist(0x42593b745B20f03d36137B6E417C222c1b0FE1a8, 1 ether);
         addToWhitelist(0x435ca13E9814e0edd2d203E3e14AD9dbcBd19224, 1 ether);
+
+        // Set chunk added flag
+        chunk3IsAdded = true;
+    }
+
+    /// @notice Add chunk 4 / 7 to the whitelist
+    function addChunk4ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk4IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0x47169f78750Be1e6ec2DEb2974458ac4F8751714, 1 ether);
         addToWhitelist(0x499114EF97E50c0F01EDD6558aD6203A9B295419, 1 ether);
         addToWhitelist(0x49C11D994DC19C5Edb62F70DFa76c393941d5fFf, 1 ether);
@@ -302,6 +401,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0x573648f395c26f453bf06Fd046a110A016274710, 1.2 ether);
         addToWhitelist(0x95159e796569A9A7866F9A6CF0E36B8D6ddE9c02, 1.2 ether);
         addToWhitelist(0xEafF321951F891EBD791eF57Dc583A859626E295, 1.2 ether);
+
+        // Set chunk added flag
+        chunk4IsAdded = true;
+    }
+
+    /// @notice Add chunk 5 / 7 to the whitelist
+    function addChunk5ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk5IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0x439f5420d4eD1DE8c982100Fcf808C5FcEeC1bFa, 1.25 ether);
         addToWhitelist(0xfd5D41Dad5218C312d693a8b6b1128889cFFec43, 1.25 ether);
         addToWhitelist(0x1FBB99bf7E6e8920Fac8Ab371cEB5A90e0801656, 1.5 ether);
@@ -354,6 +464,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0xA4D1905ceF480Fb9089578F88D3C128cf386ebd5, 3 ether);
         addToWhitelist(0xa5D5404864E9eA3104ec6721CA08E563964Ae536, 3 ether);
         addToWhitelist(0xB3ADF1FB9c488DBB42378876ff4Fc2be4c1B4365, 3 ether);
+
+        // Set chunk added flag
+        chunk5IsAdded = true;
+    }
+
+    /// @notice Add chunk 6 / 7 to the whitelist
+    function addChunk6ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk6IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0xC9403834046d64AAc2F98BA9CD29A84D48DBF58D, 3 ether);
         addToWhitelist(0xd0f9899ec83BF1cf915bf101D6E7949361151523, 3 ether);
         addToWhitelist(0xeB386a17ED99148dc98F07D0714751786836F68e, 3 ether);
@@ -406,6 +527,17 @@ contract ParsecPresale is owned {
         addToWhitelist(0x6818025bd0e89506D3D34B0C45cC1E556d2Dbc5B, 20 ether);
         addToWhitelist(0x9BE1c7a1F118F61740f01e96d292c0bae90360aB, 20 ether);
         addToWhitelist(0xa1B0dDDEFFf18651206ae2d68A14f024760eAa75, 20 ether);
+
+        // Set chunk added flag
+        chunk6IsAdded = true;
+    }
+
+    /// @notice Add chunk 7 / 7 to the whitelist
+    function addChunk7ToWhiteList() external onlyOwner {
+        // Chunk should not be added previously
+        require(!chunk7IsAdded);
+
+        // Add whitelisted amounts
         addToWhitelist(0xc61af4900d62d392D90f8a7Bd003aB159F89CE4F, 20 ether);
         addToWhitelist(0xaa26266c24805082ebf4309d2ceeb76101a4abcf, 20 ether);
         addToWhitelist(0xd2Eaa23A113F4C9522EE89EdEfF8eB05c1c65a9F, 30 ether);
@@ -418,49 +550,9 @@ contract ParsecPresale is owned {
         addToWhitelist(0x4239dD663D7B64EB86Bc9468D60Ca634726C15B7, 100 ether);
         addToWhitelist(0x7Ec915B8d3FFee3deaAe5Aa90DeF8Ad826d2e110, 100 ether);
         addToWhitelist(0xE91506fe4aF47cFdA662D141a9CEd33db7e7A874, 500 ether);
-        assert(TOTAL_WHITELISTED_FUNDING == totalWhitelistedFunding);
-    }
 
-    /// @notice A participant sends a contribution to the contract's address
-    ///         between the PRESALE_START_DATE and the PRESALE_END_DATE
-    /// @notice Only contributions above the MINIMUM_PARTICIPATION_AMOUNT are accepted.
-    ///         Otherwise the transaction is rejected and contributed amount is returned
-    ///         to the participant's account
-    /// @notice A participant's contribution will be rejected if the presale
-    ///         has been funded to the maximum amount
-    function () public payable {
-        // Contract should be powered up
-        require(contractPoweredUp);
-
-        // A participant cannot send funds before the presale start date
-        require(now >= PRESALE_START_DATE);
-
-        // A participant cannot send funds after the presale end date
-        require(now < PRESALE_END_DATE);
-
-        // A participant cannot send less than the minimum amount
-        require(msg.value >= MINIMUM_PARTICIPATION_AMOUNT);
-
-        // Contract logic for transfers relies on current date and time.
-        if (now >= PRESALE_START_DATE && now < PRESALE_SECOND_DAY_START) {
-            // Trasfer logic for the 1st day of pre-sale.
-            // Allow to transfer exact whitelisted sum for whitelisted addresses.
-            require(whitelist[msg.sender] == msg.value);
-            require(balanceOf[msg.sender] == 0);
-        } else if (now >= PRESALE_SECOND_DAY_START && now < PRESALE_THIRD_DAY_START) {
-            // Trasfer logic for the 2nd day of pre-sale.
-            // Allow to transfer any sum within contract max cap for whitelisted addresses.
-            require(whitelist[msg.sender] != 0);
-        }
-
-        // A participant cannot send funds if the presale has been reached the maximum funding amount
-        require(totalFunding.add(msg.value) <= PRESALE_MAXIMUM_FUNDING);
-
-        // Register the participant's contribution
-        addBalance(msg.sender, msg.value);
-
-        // Grant Parsec credits according to participant's contribution
-        grantCreditsForParticipation(msg.sender, msg.value);
+        // Set chunk added flag
+        chunk7IsAdded = true;
     }
 
     /// @notice Check if pre-sale contract has enough Parsec credits on its account balance 
