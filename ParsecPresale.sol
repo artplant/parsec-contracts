@@ -739,7 +739,8 @@ contract ParsecPresale is owned {
 
         // Check if contract has enough Parsec credits
         uint256 currentBalanceInCredits = parsecToken.balanceOf(this);
-        require(currentBalanceInCredits - grantedParsecCredits >= creditsToGrant);
+        uint256 availableCredits = currentBalanceInCredits.sub(grantedParsecCredits);
+        require(availableCredits >= creditsToGrant);
 
         // Add Parsec credits amount to participant's credit balance
         creditBalanceOf[participant] = creditBalanceOf[participant].add(creditsToGrant);
