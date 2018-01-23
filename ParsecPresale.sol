@@ -1,7 +1,245 @@
 pragma solidity 0.4.18;
 
-import "./SafeMath.sol";
-import "./ParsecTokenERC20.sol";
+/**
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
+ */
+library SafeMath {
+
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    if (a == 0) {
+      return 0;
+    }
+    uint256 c = a * b;
+    assert(c / a == b);
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return c;
+  }
+
+  /**
+  * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
+
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
+}
+
+contract owned {
+    address public owner;
+
+    function owned() public {
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+    function transferOwnership(address newOwner) onlyOwner public {
+        owner = newOwner;
+    }
+}
+
+interface tokenRecipient {
+    function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData) public;
+}
+
+contract ParsecTokenERC20 {
+    // Public variables of the token
+    string public constant name = "Parsec Credits";
+    string public constant symbol = "PRSC";
+    uint8 public decimals = 6;
+    uint256 public initialSupply = 30856775800;
+    uint256 public totalSupply;
+
+    // This creates an array with all balances
+    mapping (address => uint256) public balanceOf;
+    mapping (address => mapping (address => uint256)) public allowance;
+
+    // This generates a public event on the blockchain that will notify clients
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    // This notifies clients about the amount burnt
+    event Burn(address indexed from, uint256 value);
+
+    /**
+     * Constrctor function
+     *
+     * Initializes contract with initial supply tokens to the creator of the contract
+     */
+    function ParsecTokenERC20() public {
+        // Update total supply with the decimal amount
+        totalSupply = initialSupply * 10 ** uint256(decimals);
+
+        // Give the creator all initial tokens
+        balanceOf[msg.sender] = totalSupply;
+    }
+
+    /**
+     * Internal transfer, only can be called by this contract
+     */
+    function _transfer(address _from, address _to, uint _value) internal {
+        // Prevent transfer to 0x0 address. Use burn() instead
+        require(_to != 0x0);
+
+        // Check if the sender has enough
+        require(balanceOf[_from] >= _value);
+
+        // Check for overflows
+        require(balanceOf[_to] + _value > balanceOf[_to]);
+
+        // Save this for an assertion in the future
+        uint previousBalances = balanceOf[_from] + balanceOf[_to];
+
+        // Subtract from the sender
+        balanceOf[_from] -= _value;
+
+        // Add the same to the recipient
+        balanceOf[_to] += _value;
+        Transfer(_from, _to, _value);
+
+        // Asserts are used to use static analysis to find bugs in your code. They should never fail
+        assert(balanceOf[_from] + balanceOf[_to] == previousBalances);
+    }
+
+    /**
+     * Transfer tokens
+     *
+     * Send `_value` tokens to `_to` from your account
+     *
+     * @param _to The address of the recipient
+     * @param _value the amount to send
+     */
+    function transfer(address _to, uint256 _value) public {
+        _transfer(msg.sender, _to, _value);
+    }
+
+    /**
+     * Transfer tokens from other address
+     *
+     * Send `_value` tokens to `_to` in behalf of `_from`
+     *
+     * @param _from The address of the sender
+     * @param _to The address of the recipient
+     * @param _value the amount to send
+     */
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+        // Check allowance
+        require(_value <= allowance[_from][msg.sender]);
+
+        allowance[_from][msg.sender] -= _value;
+        _transfer(_from, _to, _value);
+        return true;
+    }
+
+    /**
+     * Set allowance for other address
+     *
+     * Allows `_spender` to spend no more than `_value` tokens in your behalf
+     *
+     * @param _spender The address authorized to spend
+     * @param _value the max amount they can spend
+     */
+    function approve(address _spender, uint256 _value) public returns (bool success) {
+        allowance[msg.sender][_spender] = _value;
+        return true;
+    }
+
+    /**
+     * Set allowance for other address and notify
+     *
+     * Allows `_spender` to spend no more than `_value` tokens in your behalf, and then ping the contract about it
+     *
+     * @param _spender The address authorized to spend
+     * @param _value the max amount they can spend
+     * @param _extraData some extra information to send to the approved contract
+     */
+    function approveAndCall(address _spender, uint256 _value, bytes _extraData) public returns (bool success) {
+        tokenRecipient spender = tokenRecipient(_spender);
+
+        if (approve(_spender, _value)) {
+            spender.receiveApproval(msg.sender, _value, this, _extraData);
+            return true;
+        }
+    }
+
+    /**
+     * Destroy tokens
+     *
+     * Remove `_value` tokens from the system irreversibly
+     *
+     * @param _value the amount of money to burn
+     */
+    function burn(uint256 _value) public returns (bool success) {
+        // Check if the sender has enough
+        require(balanceOf[msg.sender] >= _value);
+
+        // Subtract from the sender
+        balanceOf[msg.sender] -= _value;
+
+        // Updates totalSupply
+        totalSupply -= _value;
+
+        // Notify clients about burned tokens
+        Burn(msg.sender, _value);
+
+        return true;
+    }
+
+    /**
+     * Destroy tokens from other account
+     *
+     * Remove `_value` tokens from the system irreversibly on behalf of `_from`.
+     *
+     * @param _from the address of the sender
+     * @param _value the amount of money to burn
+     */
+    function burnFrom(address _from, uint256 _value) public returns (bool success) {
+        // Check if the targeted balance is enough
+        require(balanceOf[_from] >= _value);
+
+        // Check allowance
+        require(_value <= allowance[_from][msg.sender]);
+
+        // Subtract from the targeted balance
+        balanceOf[_from] -= _value;
+
+        // Subtract from the sender's allowance
+        allowance[_from][msg.sender] -= _value;
+
+        // Update totalSupply
+        totalSupply -= _value;
+
+        // Notify clients about burned tokens
+        Burn(_from, _value);
+
+        return true;
+    }
+}
+
 
 contract ParsecPresale is owned {
     // Use OpenZeppelin's SafeMath
@@ -83,9 +321,6 @@ contract ParsecPresale is owned {
 
     // Keep track if chunk 6 us already added to white list
     bool public chunk6IsAdded = false;
-
-    // Keep track if chunk 7 us already added to white list
-    bool public chunk7IsAdded = false;
 
     /// @notice Keep track of all participants contributions, including both the
     ///         preallocation and public phases
@@ -532,29 +767,6 @@ contract ParsecPresale is owned {
         chunk6IsAdded = true;
     }
 
-    /// @notice Add chunk 7 / 7 to the whitelist
-    function addChunk7ToWhiteList() external onlyOwner {
-        // Chunk should not be added previously
-        require(!chunk7IsAdded);
-
-        // Add whitelisted amounts
-        addToWhitelist(0xc61af4900d62d392D90f8a7Bd003aB159F89CE4F, 20 ether);
-        addToWhitelist(0xaa26266c24805082ebf4309d2ceeb76101a4abcf, 20 ether);
-        addToWhitelist(0xd2Eaa23A113F4C9522EE89EdEfF8eB05c1c65a9F, 30 ether);
-        addToWhitelist(0xe36848A8019911160E61EA58392e542ba1507086, 30 ether);
-        addToWhitelist(0xf5Eb080146a0810d09Ccf301E7ca376A1E9B9BE5, 50 ether);
-        addToWhitelist(0x5E22900dD7C41b1a40342CC19DB2125900aECF16, 50 ether);
-        addToWhitelist(0x945e1d865995b3B2106966B407Bd5D04007C27E9, 75 ether);
-        addToWhitelist(0x2CeFb2804a14cE00d9f1C72ac5f51b247499EE0C, 100 ether);
-        addToWhitelist(0x3141386d614eB3C286d40A4f85c54296c828Fb57, 100 ether);
-        addToWhitelist(0x4239dD663D7B64EB86Bc9468D60Ca634726C15B7, 100 ether);
-        addToWhitelist(0x7Ec915B8d3FFee3deaAe5Aa90DeF8Ad826d2e110, 100 ether);
-        addToWhitelist(0xE91506fe4aF47cFdA662D141a9CEd33db7e7A874, 500 ether);
-
-        // Set chunk added flag
-        chunk7IsAdded = true;
-    }
-
     /// @notice Check if pre-sale contract has enough Parsec credits on its account balance 
     ///         to reward all possible participations within pre-sale period and max cap
     function powerUpContract() external onlyOwner {
@@ -710,6 +922,11 @@ contract ParsecPresale is owned {
         LogParticipation(participant, value, now);
     }
 
+    /// @dev Add whitelisted amount
+    function ownerAddToWhitelist(address participant, uint256 value) external onlyOwner {
+        addToWhitelist(participant, value);
+    }
+    
     /// @dev Keep track of whitelisted participants contributions
     function addToWhitelist(address participant, uint256 value) private {
         // Participant's balance is increased by the sent amount
@@ -721,16 +938,9 @@ contract ParsecPresale is owned {
 
     function grantCreditsForParticipation(address participant, uint256 etherAmount) private {
         // Add bonus 5% if contributed amount is greater or equal to bonus threshold
-        // uint256 multiplier = etherAmount >= BONUS_THRESHOLD ? 105 : 100;
-        // uint256 divisor = 100;
-        // uint256 creditsToGrant = (multiplier * etherAmount * PARSEC_CREDITS_PER_ETHER) / (divisor * 1 ether);
-
-        // Construct dividend in a safe manner
         uint256 dividend = etherAmount >= BONUS_THRESHOLD ? 105 : 100;
         dividend = dividend.mul(etherAmount);
         dividend = dividend.mul(PARSEC_CREDITS_PER_ETHER);
-
-        // Construct divisor in as safe manner
         uint256 divisor = 100;
         divisor = divisor.mul(1 ether);
 
