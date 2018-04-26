@@ -533,15 +533,11 @@ contract ParsecPreICO is owned {
         // Set participant's KYC status to Accepted
         kycStatus[participant] = KycState.Accepted;
 
-        // Get amounts of pending ETH and Parsecs
+        // Get pending ETH amount
         uint256 pendingAmountOfEth = pendingContributionOf[participant];
-        uint256 pendingAmountOfParsecs = pendingParsecsOf[participant];
 
-        // Decrease pendingFunding by pendingAmountOfEth
-        pendingFunding = pendingFunding.sub(pendingAmountOfEth);
-
-        // Decrease pendingParsecs by pendingAmountOfParsecs
-        pendingParsecs = pendingParsecs.sub(pendingAmountOfParsecs);
+        // Reset pending contribution
+        resetPendingContribution(participant);
 
         // Add accepted contribution
         addAcceptedContribution(participant, pendingAmountOfEth);
@@ -555,21 +551,11 @@ contract ParsecPreICO is owned {
         // Set participant's KYC status to Declined
         kycStatus[participant] = KycState.Declined;
 
-        // Get amounts of pending ETH and Parsecs
+        // Get pending ETH amount
         uint256 pendingAmountOfEth = pendingContributionOf[participant];
-        uint256 pendingAmountOfParsecs = pendingParsecsOf[participant];
 
-        // Decrease pending contribution by pendingAmountOfEth
-        pendingContributionOf[participant] = pendingContributionOf[participant].sub(pendingAmountOfEth);
-
-        // Decrease pending Parsecs reward by pendingAmountOfParsecs
-        pendingParsecsOf[participant] = pendingParsecsOf[participant].sub(pendingAmountOfParsecs);
-
-        // Decrease pendingFunding by pendingAmountOfEth
-        pendingFunding = pendingFunding.sub(pendingAmountOfEth);
-
-        // Decrease pendingParsecs by pendingAmountOfParsecs
-        pendingParsecs = pendingParsecs.sub(pendingAmountOfParsecs);
+        // Reset pending contribution
+        resetPendingContribution(participant);
 
         // Log an event of the participant's KYC decline
         LogKycDecline(participant, pendingAmountOfEth, now);
@@ -621,6 +607,25 @@ contract ParsecPreICO is owned {
 
         // Transfer Parsecs
         parsecToken.transfer(participant, parsecAmount);
+    }
+
+    /// @dev Reset pending contribution
+    function resetPendingContribution(address participant) private {
+        // Get amounts of pending ETH and Parsecs
+        uint256 pendingAmountOfEth = pendingContributionOf[participant];
+        uint256 pendingAmountOfParsecs = pendingParsecsOf[participant];
+
+        // Decrease pending contribution by pendingAmountOfEth
+        pendingContributionOf[participant] = pendingContributionOf[participant].sub(pendingAmountOfEth);
+
+        // Decrease pending Parsecs reward by pendingAmountOfParsecs
+        pendingParsecsOf[participant] = pendingParsecsOf[participant].sub(pendingAmountOfParsecs);
+
+        // Decrease pendingFunding by pendingAmountOfEth
+        pendingFunding = pendingFunding.sub(pendingAmountOfEth);
+
+        // Decrease pendingParsecs by pendingAmountOfParsecs
+        pendingParsecs = pendingParsecs.sub(pendingAmountOfParsecs);
     }
 
     /// @dev Calculate amount of Parsecs to grant for ETH contribution
