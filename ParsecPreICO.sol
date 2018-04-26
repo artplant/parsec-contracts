@@ -389,7 +389,7 @@ contract ParsecPreICO is owned {
         require(contractPoweredUp);
 
         // A participant can send funds if:
-        // - contract NOT started;
+        // - contract IS started;
         require(contractStarted);        
         // - contract IS NOT finished;
         require(!contractFinished);
