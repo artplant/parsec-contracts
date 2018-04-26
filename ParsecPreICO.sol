@@ -362,7 +362,6 @@ contract ParsecPreICO is owned {
      * @param _hardCap Hard cap in ETH for this contract (value in wei, 18 decimals)
      * @param _parsecsPerEth The amount of Parsecs granted per 1 ETH (6 decimals)
      */
-    // OK!!!
     function ParsecPreICO (address _tokenAddress, uint256 _hardCap, uint256 _parsecsPerEth) public {
         // Get Parsec ERC20 token instance
         parsecToken = ParsecTokenERC20(_tokenAddress);
@@ -389,12 +388,12 @@ contract ParsecPreICO is owned {
         // Contract should be powered up
         require(contractPoweredUp);
 
-        // A participant cannot send funds if:
-        // - contract IS NOT started;
+        // A participant can send funds if:
+        // - contract NOT started;
         require(contractStarted);        
-        // - contract IS finished;
+        // - contract IS NOT finished;
         require(!contractFinished);
-        // - contract IS paused      
+        // - contract IS NOT paused      
         require(!contractPaused);
 
         // Calculate maximum amount of ETH smart contract can accept
