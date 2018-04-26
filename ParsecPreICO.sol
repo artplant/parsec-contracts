@@ -493,6 +493,9 @@ contract ParsecPreICO is owned {
         require(value > 0);
         require(value <= availableFunding);
 
+        // Value should not exceed current balance
+        require(value <= address(this).balance);
+
         // Decrease availableFunding by value
         availableFunding = availableFunding.sub(value);
 
@@ -514,8 +517,9 @@ contract ParsecPreICO is owned {
         // Calculate maximal amount to withdraw
         uint256 maxAmountToWithdraw = parsecBalance.sub(pendingParsecs);
 
-        // Maximal amount to withdraw should be greater than zero
+        // Maximal amount to withdraw should be greater than zero and not greater than total balance
         require(maxAmountToWithdraw > 0);
+        require(maxAmountToWithdraw <= parsecBalance);
 
         // Amount of Parsecs to withdraw should not exceed maxAmountToWithdraw
         require(value > 0);
