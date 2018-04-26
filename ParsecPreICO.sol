@@ -560,6 +560,12 @@ contract ParsecPreICO is owned {
         uint256 pendingAmountOfEth = pendingContributionOf[participant];
         uint256 pendingAmountOfParsecs = pendingParsecsOf[participant];
 
+        // Decrease pending contribution by pendingAmountOfEth
+        pendingContributionOf[participant] = pendingContributionOf[participant].sub(pendingAmountOfEth);
+
+        // Decrease pending Parsecs reward by pendingAmountOfParsecs
+        pendingParsecsOf[participant] = pendingParsecsOf[participant].sub(pendingAmountOfParsecs);
+
         // Decrease pendingFunding by pendingAmountOfEth
         pendingFunding = pendingFunding.sub(pendingAmountOfEth);
 
