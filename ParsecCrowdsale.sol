@@ -510,7 +510,7 @@ contract ParsecCrowdsale is owned {
         msg.sender.transfer(value);
     }
 
-    /// @notice Set Auditor account address to a new vlue
+    /// @notice Set Auditor account address to a new value
     function ownerSetAuditor(address _auditorAddress) external onlyOwner {
         // Auditor address cannot be zero
         require(_auditorAddress != 0x0);
@@ -685,6 +685,7 @@ contract ParsecCrowdsale is owned {
         }
     }
 
+    /// @dev Allow participants to clawback ETH in case of Crowdsale failure
     function participantClawbackEther(uint256 value) external {
         // Participant cannot withdraw ETH if refund is not started or after it is finished
         require(contractRefundStarted);
